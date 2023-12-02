@@ -2,14 +2,17 @@ extern crate base64;
 use std::ops::Range;
 use std::str;
 use web_time::Duration;
+use yew::Callback;
 
 use yew::{function_component, html, Html, Properties};
 
 use tlsn_core::proof::{SessionProof, TlsProof};
 
 use crate::components::content_iframe::ContentIFrame;
+use crate::components::content_iframe_2::ContentIFrame2;
 use crate::components::redacted_bytes_component::Direction;
 use crate::components::redacted_bytes_component::RedactedBytesComponent;
+use crate::components::passport_stamps::PassportStamps;
 
 const REDACTED_CHAR: char = 'X'; // '█' '🙈' 'X'
 
@@ -19,6 +22,8 @@ pub struct Props {
     pub file_type: String,
     pub data: Vec<u8>,
     pub pem: p256::PublicKey,
+    // pub on_json_received: Callback<String>,
+    pub on_domain_json_data: Callback<(String, String)>,
 }
 
 #[function_component]
@@ -31,6 +36,7 @@ pub fn ViewFile(props: &Props) -> Html {
     }
 
     fn parse_tls_proof(json_str: &str, pem: p256::PublicKey) -> Html {
+        gloo::console::log!("parse_tls_proof called with JSON:", json_str);
         let tls_proof: Result<TlsProof, serde_json::Error> = serde_json::from_str(json_str);
 
         match tls_proof {
@@ -93,6 +99,13 @@ pub fn ViewFile(props: &Props) -> Html {
 
                 html! {
                     <div class="p-4 flex flex-col justify-center items-center w-full">
+
+                        // Include PassportStamps component here
+                        <PassportStamps
+                            server_domain={server_name.as_str().to_string()} 
+                            json_data={json_str.to_string()} 
+                        />
+
                         <div class="p-4 w-5/6">
                             <b>{"Server domain:" }</b>
                             <div class="bg-black text-white p-4 rounded-md">
@@ -110,7 +123,9 @@ pub fn ViewFile(props: &Props) -> Html {
 
                         <RedactedBytesComponent direction={Direction::Send} redacted_char={REDACTED_CHAR} bytes={sent.data().to_vec()} redacted_ranges={redacted_ranges_send} />
 
+                        <ContentIFrame2 bytes={recv.data().to_vec()} />
                         <ContentIFrame bytes={recv.data().to_vec()} />
+                        // <ContentIFrame bytes={recv.data().to_vec()} on_json_received={ctx.link().callback(Msg::JsonDataReceived)} />
 
                         <RedactedBytesComponent direction={Direction::Received} redacted_char={REDACTED_CHAR} bytes={recv.data().to_vec()} redacted_ranges={redacted_ranges_recv} />
 

@@ -1,3 +1,4 @@
+# isitlegit.com
 # TLSNotary proof visualizer
 
 This is a Proof of Concept of a web app to visualized TLSNotary proofs.

@@ -54,11 +54,32 @@ fn get_content_type(bytes: &[u8]) -> (ContentType, String) {
 }
 
 #[function_component]
-pub fn ContentIFrame(props: &Props) -> Html {
-    // JavaScript function to trigger Prism highlighting
+pub fn ContentIFrame2(props: &Props) -> Html {
     use_effect(move || highlight_code());
 
-    match get_content_type(&props.bytes) {
+    let render_twitter_data = |json: &serde_json::Value| -> Html {
+        if let Some(users) = json.get("users").and_then(|u| u.as_array()) {
+            html! {
+                <>
+                    <h2>{"Twitter Data"}</h2>
+                    { for users.iter().map(|user| {
+                        let screen_name = user.get("screen_name").and_then(|sn| sn.as_str()).unwrap_or_default();
+                        let is_verified = user.get("is_verified").and_then(|iv| iv.as_bool()).unwrap_or(false);
+                        html! {
+                            <div>
+                                <p>{format!("Screen Name: {}", screen_name)}</p>
+                                <p>{format!("Is Verified: {}", is_verified)}</p>
+                            </div>
+                        }
+                    }) }
+                </>
+            }
+        } else {
+            html! { <p>{"No Twitter data found."}</p> }
+        }
+    };
+
+    let content = match get_content_type(&props.bytes) {
         (ContentType::Html, content_html) => html! {
             <details class="p-4 w-5/6" open={true}>
                 <summary><b>{"Received HTML content:"}</b></summary>
@@ -67,20 +88,30 @@ pub fn ContentIFrame(props: &Props) -> Html {
                 </iframe>
             </details>
         },
-        (ContentType::Json, content_json) => html! {
-            <details class="p-4 w-5/6" open={true}>
-                <summary><b>{"Received JSON content :"}</b></summary>
-                <div class="bg-black text-white p-4 rounded-md overflow-x-auto">
-                    <pre>
-                        <code class="lang-json">
-                            {render_json(content_json)}
-                        </code>
-                    </pre>
-                </div>
-            </details>
+        (ContentType::Json, content_json) => {
+            let json = serde_json::from_str::<serde_json::Value>(&content_json);
+            html! {
+                <details class="p-4 w-5/6" open={true}>
+                    <summary><b>{"Received JSON content :"}</b></summary>
+                    <div class="bg-black text-white p-4 rounded-md overflow-x-auto">
+                        <pre>
+                            <code class="lang-json">
+                                {render_json(content_json)}
+                            </code>
+                        </pre>
+                        { if let Ok(json) = json {
+                            render_twitter_data(&json)
+                        } else {
+                            html! { <p>{"Invalid JSON format."}</p> }
+                        } }
+                    </div>
+                </details>
+            }
         },
         _ => html! {},
-    }
+    };
+
+    content
 }
 
 #[wasm_bindgen(inline_js = "export function highlight_code() { Prism.highlightAll(); }")]

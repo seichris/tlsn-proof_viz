@@ -1,6 +1,6 @@
 use std::{fmt, ops::Range};
 
-use gloo::console::log;
+// use gloo::console::log;
 use yew::prelude::*;
 
 #[derive(Clone, PartialEq)]

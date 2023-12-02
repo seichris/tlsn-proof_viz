@@ -14,6 +14,7 @@ mod components;
 use crate::components::pem_input::PemInputComponent;
 use crate::components::pem_input::DEFAULT_PEM;
 use crate::components::view_file::ViewFile;
+use crate::components::passport_stamps::PassportStamps;
 use elliptic_curve::pkcs8::DecodePublicKey;
 
 #[derive(Properties, PartialEq)]
@@ -27,6 +28,8 @@ pub enum Msg {
     Loaded(String, String, Vec<u8>),
     Files(Vec<File>),
     Pem(p256::PublicKey),
+    DomainJsonDataReceived(String, String),
+    // JsonDataReceived(String),
 }
 
 pub struct App {
@@ -34,6 +37,8 @@ pub struct App {
     files: Vec<FileDetails>,
     pem: p256::PublicKey,
     is_processing: bool,
+    domain: Option<String>,
+    json_data: Option<String>,
 }
 
 impl Component for App {
@@ -41,11 +46,15 @@ impl Component for App {
     type Properties = ();
 
     fn create(_ctx: &Context<Self>) -> Self {
+        gloo::console::log!("App component is being created");
+
         Self {
             readers: HashMap::default(),
             files: Vec::default(),
             pem: p256::PublicKey::from_public_key_pem(DEFAULT_PEM).unwrap(),
             is_processing: false,
+            domain: None,
+            json_data: None,
         }
     }
 
@@ -87,10 +96,21 @@ impl Component for App {
                 }
                 true
             }
+            // Msg::JsonDataReceived(json_data) => {
+            //     self.json_data = Some(json_data);
+            //     true
+            // },
+            Msg::DomainJsonDataReceived(domain, json_data) => {
+                gloo::console::log!("DomainJsonDataReceived:", &domain);
+                self.domain = Some(domain);
+                self.json_data = Some(json_data);
+                true // Indicate that the component should re-render
+            },
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        gloo::console::log!("Rendering App component");
         let link_classes =
             "block px-4 py-2 hover:bg-black hover:text-white rounded border-black border";
         let links = [
@@ -184,9 +204,29 @@ impl Component for App {
 
                 <PemInputComponent pem_callback={ctx.link().callback(Msg::Pem)}/>
 
+                // if let Some(json_data) = self.json_data.clone() {
+                //         <PassportStamps server_domain={self.domain.clone().unwrap_or_default()} json_data={json_data} />
+                // }
+
+                if let (Some(domain), Some(json_data)) = (self.domain.clone(), self.json_data.clone()) {
+                    <PassportStamps server_domain={domain} json_data={json_data} />
+                }
+
                 <div>
                     {for self.files.iter().rev().map(|file| html! {
-                        <ViewFile name={file.name.clone()} file_type={file.file_type.clone()} data={file.data.clone()} pem={self.pem} />
+                        // <ViewFile name={file.name.clone()} file_type={file.file_type.clone()} data={file.data.clone()} pem={self.pem} />
+                        <ViewFile
+                            name={file.name.clone()}
+                            file_type={file.file_type.clone()}
+                            data={file.data.clone()}
+                            pem={self.pem}
+                            // on_json_received={ctx.link().callback(Msg::JsonDataReceived)}
+                            // on_domain_json_data={ctx.link().callback(|(domain, json_data)| Msg::DomainJsonDataReceived(domain, json_data))}
+                            on_domain_json_data={ctx.link().callback(|(domain, json_data)| {
+                                gloo::console::log!("Callback in App sending DomainJsonDataReceived");
+                                Msg::DomainJsonDataReceived(domain, json_data)
+                            })}
+                        />
                     })}
                 </div>
             </div>
@@ -197,6 +237,7 @@ impl Component for App {
 
 fn main() {
     wasm_logger::init(wasm_logger::Config::default());
+    gloo::console::log!("Application starting");
 
     yew::Renderer::<App>::new().render();
 }
