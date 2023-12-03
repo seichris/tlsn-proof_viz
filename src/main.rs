@@ -101,7 +101,7 @@ impl Component for App {
             //     true
             // },
             Msg::DomainJsonDataReceived(domain, json_data) => {
-                gloo::console::log!("DomainJsonDataReceived:", &domain);
+                // gloo::console::log!("DomainJsonDataReceived:", &domain);
                 self.domain = Some(domain);
                 self.json_data = Some(json_data);
                 true // Indicate that the component should re-render

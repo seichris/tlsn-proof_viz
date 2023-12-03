@@ -58,34 +58,51 @@ fn get_content_type(bytes: &[u8]) -> (ContentType, String) {
 pub fn ContentIFrame2(props: &Props) -> Html {
     use_effect(move || highlight_code());
 
-    fn render_twitter_data(json_str: &str) -> Html {
-        gloo::console::log!("Received JSON:", json_str);
-
-        match serde_json::from_str::<serde_json::Value>(json_str) {
-            Ok(json) => {
-                if let Some(users) = json.get("users").and_then(|u| u.as_array()) {
-                    html! {
-                        <>
-                            <h2>{"Twitter Data"}</h2>
-                            { for users.iter().map(|user| {
-                                let screen_name = user.get("screen_name").and_then(|sn| sn.as_str()).unwrap_or_default();
-                                let is_verified = user.get("is_verified").and_then(|iv| iv.as_bool()).unwrap_or(false);
-                                html! {
-                                    <div>
-                                        <p>{format!("Screen Name: {}", screen_name)}</p>
-                                        <p>{format!("Is Verified: {}", is_verified)}</p>
-                                    </div>
-                                }
-                            }) }
-                        </>
-                    }
-                } else {
-                    html! { <p>{"No Twitter data found."}</p> }
-                }
+    fn render_twitter_data(content: &str) -> Html {
+        // Check if the content starts with a specific pattern or contains specific keys
+        // Adjust the conditions based on the actual content you expect
+        if content.starts_with("{\"users\":[") {
+            // Extract the relevant information from the string
+            // This is a simplistic example, you might need a more sophisticated approach
+            let screen_name = extract_screen_name(content);
+            let is_verified = extract_is_verified(content);
+    
+            html! {
+                <>
+                    <h2>{"Twitter Data"}</h2>
+                    <div>
+                        <p>{format!("Screen Name: {}", screen_name)}</p>
+                        <p>{format!("Is Verified: {}", is_verified)}</p>
+                    </div>
+                </>
             }
-            Err(_) => html! { <p>{"Invalid JSON format."}</p> },
+        } else {
+            html! { <p>{"No Twitter data found or format is not recognized."}</p> }
         }
     }
+
+    // Function to extract screen name
+    fn extract_screen_name(content: &str) -> String {
+        // Look for the "screen_name" key and extract the value
+        let key = "\"screen_name\":\"";
+        content.find(key).and_then(|start| {
+            let remaining = &content[start + key.len()..];
+            remaining.split('"').next().map(String::from)
+        }).unwrap_or_default()
+    }
+
+    // Function to extract is_verified status
+    fn extract_is_verified(content: &str) -> bool {
+        // Look for the "is_verified" key and extract the value
+        let key = "\"is_verified\":";
+        content.find(key).and_then(|start| {
+            let remaining = &content[start + key.len()..];
+            remaining.split(',').next().map(|value| {
+                value.trim().eq("true")
+            })
+        }).unwrap_or(false)
+    }
+
 
     let content = match get_content_type(&props.bytes) {
         (ContentType::Html, content_html) => html! {
@@ -97,17 +114,19 @@ pub fn ContentIFrame2(props: &Props) -> Html {
             </details>
         },
         (ContentType::Json, content_json) => html! {
-            <details class="p-4 w-5/6" open={true}>
-                <summary><b>{"Received JSON content :"}</b></summary>
-                <div class="bg-black text-white p-4 rounded-md overflow-x-auto">
-                    <pre>
-                        <code class="lang-json">
-                            {render_json(&content_json)}
-                        </code>
-                    </pre>
-                    {render_twitter_data(&content_json)}
-                </div>
-            </details>
+            <div class="p-4 w-5/6">
+                {render_twitter_data(&content_json)}
+                <details class="p-4 w-5/6" open={true}>
+                    <summary><b>{"Received JSON content :"}</b></summary>
+                    <div class="bg-black text-white p-4 rounded-md overflow-x-auto">
+                        <pre>
+                            <code class="lang-json">
+                                {render_json(&content_json)}
+                            </code>
+                        </pre>
+                    </div>
+                </details>
+            </div>
         },
         _ => html! {},
     };

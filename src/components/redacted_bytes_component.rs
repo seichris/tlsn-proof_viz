@@ -101,7 +101,7 @@ pub fn RedactedBytesComponent(props: &Props) -> Html {
     } = props;
 
     html! {
-        <details class="p-4 w-5/6" open={true}>
+        <details class="p-4 w-5/6" open={false}>
             <summary><b>{"Bytes "}{direction}{": " }</b></summary>
             <div class="bg-black text-white p-4 rounded-md overflow-x-auto">
                 <pre>{redactions_in_red(bytes, redacted_ranges, redacted_char)}</pre>

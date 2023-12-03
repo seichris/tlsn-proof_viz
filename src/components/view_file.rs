@@ -36,7 +36,7 @@ pub fn ViewFile(props: &Props) -> Html {
     }
 
     fn parse_tls_proof(json_str: &str, pem: p256::PublicKey) -> Html {
-        gloo::console::log!("parse_tls_proof called with JSON:", json_str);
+        // gloo::console::log!("parse_tls_proof called with JSON:", json_str);
         let tls_proof: Result<TlsProof, serde_json::Error> = serde_json::from_str(json_str);
 
         match tls_proof {
@@ -100,11 +100,15 @@ pub fn ViewFile(props: &Props) -> Html {
                 html! {
                     <div class="p-4 flex flex-col justify-center items-center w-full">
 
-                        // Include PassportStamps component here
-                        <PassportStamps
-                            server_domain={server_name.as_str().to_string()} 
-                            json_data={json_str.to_string()} 
-                        />
+                        
+                        <ContentIFrame2 bytes={recv.data().to_vec()} />
+                        // <ContentIFrame bytes={recv.data().to_vec()} />
+                        // <ContentIFrame bytes={recv.data().to_vec()} on_json_received={ctx.link().callback(Msg::JsonDataReceived)} />
+
+                        // <PassportStamps
+                        //     server_domain={server_name.as_str().to_string()} 
+                        //     json_data={json_str.to_string()} 
+                        // />
 
                         <div class="p-4 w-5/6">
                             <b>{"Server domain:" }</b>
@@ -122,10 +126,6 @@ pub fn ViewFile(props: &Props) -> Html {
                         </div>
 
                         <RedactedBytesComponent direction={Direction::Send} redacted_char={REDACTED_CHAR} bytes={sent.data().to_vec()} redacted_ranges={redacted_ranges_send} />
-
-                        <ContentIFrame2 bytes={recv.data().to_vec()} />
-                        <ContentIFrame bytes={recv.data().to_vec()} />
-                        // <ContentIFrame bytes={recv.data().to_vec()} on_json_received={ctx.link().callback(Msg::JsonDataReceived)} />
 
                         <RedactedBytesComponent direction={Direction::Received} redacted_char={REDACTED_CHAR} bytes={recv.data().to_vec()} redacted_ranges={redacted_ranges_recv} />
 
