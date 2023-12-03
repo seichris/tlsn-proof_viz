@@ -18,7 +18,7 @@ fn load_from_storage(key: &str) -> Option<String> {
 fn save_to_storage(key: &str, data: &str) {
     let storage = LocalStorage::raw();
     storage.set(key, data).unwrap_or_else(|_| {
-        // log::error!("Error saving to storage: {:?}", err);
+        log::error!("Error saving to storage");
     });
 }
 
@@ -28,6 +28,7 @@ enum ContentType {
     Json,
     Other,
 }
+
 fn get_content_type(bytes: &[u8]) -> (ContentType, String) {
     match parse_response(&bytes) {
         Ok(x) => {
@@ -56,29 +57,6 @@ fn get_content_type(bytes: &[u8]) -> (ContentType, String) {
     }
 }
 
-// fn render_twitter_data(json_str: &str) -> String {
-//     // Attempt to parse the JSON string
-//     match serde_json::from_str::<serde_json::Value>(json_str) {
-//         Ok(json) => {
-//             // Check if 'users' array is present and iterate through it
-//             if let Some(users) = json.get("users").and_then(|u| u.as_array()) {
-//                 let mut output = String::new();
-//                 for user in users.iter() {
-//                     // Extract 'screen_name' and 'is_verified' fields
-//                     let screen_name = user.get("screen_name").and_then(|sn| sn.as_str()).unwrap_or_default();
-//                     let is_verified = user.get("is_verified").and_then(|iv| iv.as_bool()).unwrap_or(false);
-
-//                     // Append extracted data to the output string
-//                     output += &format!("Screen Name: {}\nIs Verified: {}\n\n", screen_name, is_verified);
-//                 }
-//                 output
-//             } else {
-//                 "No Twitter data found.".to_string()
-//             }
-//         }
-//         Err(_) => "Invalid JSON format.".to_string(),
-//     }
-// }
 fn render_twitter_data(content: &str) -> String {
     // Check if the content starts with a specific pattern or contains specific keys
     // Adjust these conditions based on the actual content you expect
@@ -117,74 +95,62 @@ fn extract_is_verified(content: &str) -> bool {
     }).unwrap_or(false)
 }
 
-
 #[function_component]
 pub fn ContentIFrame3(props: &Props) -> Html {
-    let twitter_data = use_state(|| String::new());
+    let initial_data = if !props.bytes.is_empty() {
+        String::from_utf8_lossy(&props.bytes).to_string()
+    } else {
+        load_from_storage(KEY).unwrap_or_default()
+    };
+
+    let twitter_data = use_state(|| initial_data);
     let twitter_data_clone = twitter_data.clone();
-    // let (content_type, content) = get_content_type(&props.bytes);
 
-    // Load data from storage when the component mounts
-    {
-        let twitter_data = twitter_data.clone();
-        use_effect_with((), move |_| {
-            if let Some(loaded_data) = load_from_storage(KEY) {
-                twitter_data.set(loaded_data);
-            }
-            || ()
-        });
-    }
-
-    // Save new data to storage when bytes change
     {
         let bytes_clone = props.bytes.clone();
-
         use_effect(move || {
-            // Determine content type
+            // Determine the content type of the data
             let (content_type, content) = get_content_type(&bytes_clone);
-
+        
             // Initialize a variable to hold the data to be set
             let mut data_to_set = None;
         
+            // Match against the content type to process the data accordingly
             match content_type {
                 ContentType::Json => {
-                    // Process as JSON
+                    // If the content type is JSON, process it using `render_twitter_data`
                     let data = render_twitter_data(&content);
-                    save_to_storage(KEY, &data);
-                    // twitter_data_clone.set(data);
-                    // if *twitter_data_clone != data {
-                    //     twitter_data_clone.set(data);
-                    // }
                     data_to_set = Some(data);
                 },
                 ContentType::Html => {
-                    // Handle HTML content (or ignore if not relevant)
+                    // Handle HTML content here if needed
                 },
                 ContentType::Other => {
-                    // Handle other content types or show a message
-                    // if *twitter_data_clone != data {
-                    //     twitter_data_clone.set("Non-JSON format or unrecognized data.".to_string());
-                    // }
+                    // For unrecognized content types, set a default message
                     data_to_set = Some("Non-JSON format or unrecognized data.".to_string());
                 },
             }
-
+        
+            // If there is data to set, update the state and save it to local storage
             if let Some(data) = data_to_set {
+                // Check if the current state is different from the new data
                 if *twitter_data_clone != data {
-                    twitter_data_clone.set(data);
+                    // Update the state with the new data
+                    twitter_data_clone.set(data.clone());
+                    // Save the new data to local storage
+                    save_to_storage(KEY, &data);
                 }
             }
-
+        
+            // Cleanup function (optional)
             || ()
         });
-    }
+        
+    }    
 
     html! {
         <div class="bg-black text-white p-4 rounded-md overflow-x-auto">
             {(*twitter_data).clone()}
         </div>
     }
-
 }
-
-

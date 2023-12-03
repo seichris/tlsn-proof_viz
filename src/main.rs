@@ -2,6 +2,9 @@ extern crate base64;
 use gloo::file::callbacks::FileReader;
 use gloo::file::File;
 use std::collections::HashMap;
+use gloo_storage::{Storage, LocalStorage};
+use serde::{Deserialize};
+use serde_json;
 
 #[allow(unused_imports)]
 use gloo::console::log;
@@ -17,7 +20,7 @@ use crate::components::view_file::ViewFile;
 use crate::components::passport_stamps::PassportStamps;
 use elliptic_curve::pkcs8::DecodePublicKey;
 
-#[derive(Properties, PartialEq)]
+#[derive(Properties, PartialEq, Deserialize)]
 struct FileDetails {
     name: String,
     file_type: String,
@@ -41,22 +44,43 @@ pub struct App {
     json_data: Option<String>,
 }
 
+fn load_files_from_local_storage() -> Option<Vec<FileDetails>> {
+    let storage = LocalStorage::raw();
+    match storage.get("app::twitter_data") {
+        Ok(Some(data_str)) => {
+            serde_json::from_str(&data_str).ok()
+        },
+        _ => None,
+    }
+}
+
+
 impl Component for App {
     type Message = Msg;
     type Properties = ();
 
+    // fn load_files_from_local_storage() -> Vec<FileDetails> {
+    //     let storage = LocalStorage::raw();
+    //     storage.get("app::twitter_data").ok().and_then(|data| {
+    //         serde_json::from_str(&data).ok()
+    //     }).unwrap_or_else(Vec::new)
+    // }
+
     fn create(_ctx: &Context<Self>) -> Self {
         gloo::console::log!("App component is being created");
-
+    
+        let files_from_storage = load_files_from_local_storage().unwrap_or_else(Vec::new);
+    
         Self {
             readers: HashMap::default(),
-            files: Vec::default(),
+            files: files_from_storage,
             pem: p256::PublicKey::from_public_key_pem(DEFAULT_PEM).unwrap(),
             is_processing: false,
             domain: None,
             json_data: None,
         }
     }
+    
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {

@@ -102,6 +102,7 @@ pub fn ViewFile(props: &Props) -> Html {
                     <div class="p-4 flex flex-col justify-center items-center w-full">
 
                         <ContentIFrame3 bytes={recv.data().to_vec()} />
+                        // <ContentIFrame3 bytes={move || props.data.clone()} />
                         <ContentIFrame2 bytes={recv.data().to_vec()} />
                         // <ContentIFrame bytes={recv.data().to_vec()} />
                         // <ContentIFrame bytes={recv.data().to_vec()} on_json_received={ctx.link().callback(Msg::JsonDataReceived)} />
