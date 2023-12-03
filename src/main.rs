@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use gloo_storage::{Storage, LocalStorage};
 use serde::{Deserialize};
 use serde_json;
+// use serde_json::to_string;
 
 #[allow(unused_imports)]
 use gloo::console::log;
@@ -68,9 +69,16 @@ impl Component for App {
 
     fn create(_ctx: &Context<Self>) -> Self {
         gloo::console::log!("App component is being created");
-    
         let files_from_storage = load_files_from_local_storage().unwrap_or_else(Vec::new);
-    
+        // let files_str = to_string(&files_from_storage).unwrap_or_else(|_| "Failed to serialize files".to_string());
+        for file in &files_from_storage {
+            gloo::console::log!(
+                "File Name:", &file.name,
+                ", File Type:", &file.file_type,
+                ", Data Length:", file.data.len()
+            );
+        }
+            
         Self {
             readers: HashMap::default(),
             files: files_from_storage,

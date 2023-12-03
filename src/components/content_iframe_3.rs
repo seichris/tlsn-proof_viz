@@ -2,6 +2,7 @@ use yew::prelude::*;
 use gloo_storage::{LocalStorage, Storage};
 use log;
 use spansy::http::parse_response;
+// use serde_json::to_string;
 
 const KEY: &str = "app::twitter_data";
 
@@ -97,6 +98,9 @@ fn extract_is_verified(content: &str) -> bool {
 
 #[function_component]
 pub fn ContentIFrame3(props: &Props) -> Html {
+    let bytes_str = String::from_utf8_lossy(&props.bytes).to_string();
+    gloo::console::log!("Rendering ContentIFrame3 with bytes:", &bytes_str);
+
     let initial_data = if !props.bytes.is_empty() {
         String::from_utf8_lossy(&props.bytes).to_string()
     } else {
@@ -135,6 +139,8 @@ pub fn ContentIFrame3(props: &Props) -> Html {
             if let Some(data) = data_to_set {
                 // Check if the current state is different from the new data
                 if *twitter_data_clone != data {
+                    gloo::console::log!("Updating twitter_data state:", &data);
+
                     // Update the state with the new data
                     twitter_data_clone.set(data.clone());
                     // Save the new data to local storage
