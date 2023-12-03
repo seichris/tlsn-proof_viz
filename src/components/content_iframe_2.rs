@@ -10,14 +10,15 @@ pub struct Props {
     pub bytes: Vec<u8>,
 }
 
-fn render_json(content: String) -> String {
-    let json = serde_json::from_str::<serde_json::Value>(content.as_str());
+fn render_json(content: &str) -> String {
+    let json = serde_json::from_str::<serde_json::Value>(content);
     if let Ok(json) = json {
         serde_json::to_string_pretty(&json).unwrap()
     } else {
-        content
+        content.to_string()
     }
 }
+
 
 #[derive(Debug)]
 enum ContentType {
@@ -57,27 +58,34 @@ fn get_content_type(bytes: &[u8]) -> (ContentType, String) {
 pub fn ContentIFrame2(props: &Props) -> Html {
     use_effect(move || highlight_code());
 
-    let render_twitter_data = |json: &serde_json::Value| -> Html {
-        if let Some(users) = json.get("users").and_then(|u| u.as_array()) {
-            html! {
-                <>
-                    <h2>{"Twitter Data"}</h2>
-                    { for users.iter().map(|user| {
-                        let screen_name = user.get("screen_name").and_then(|sn| sn.as_str()).unwrap_or_default();
-                        let is_verified = user.get("is_verified").and_then(|iv| iv.as_bool()).unwrap_or(false);
-                        html! {
-                            <div>
-                                <p>{format!("Screen Name: {}", screen_name)}</p>
-                                <p>{format!("Is Verified: {}", is_verified)}</p>
-                            </div>
-                        }
-                    }) }
-                </>
+    fn render_twitter_data(json_str: &str) -> Html {
+        gloo::console::log!("Received JSON:", json_str);
+
+        match serde_json::from_str::<serde_json::Value>(json_str) {
+            Ok(json) => {
+                if let Some(users) = json.get("users").and_then(|u| u.as_array()) {
+                    html! {
+                        <>
+                            <h2>{"Twitter Data"}</h2>
+                            { for users.iter().map(|user| {
+                                let screen_name = user.get("screen_name").and_then(|sn| sn.as_str()).unwrap_or_default();
+                                let is_verified = user.get("is_verified").and_then(|iv| iv.as_bool()).unwrap_or(false);
+                                html! {
+                                    <div>
+                                        <p>{format!("Screen Name: {}", screen_name)}</p>
+                                        <p>{format!("Is Verified: {}", is_verified)}</p>
+                                    </div>
+                                }
+                            }) }
+                        </>
+                    }
+                } else {
+                    html! { <p>{"No Twitter data found."}</p> }
+                }
             }
-        } else {
-            html! { <p>{"No Twitter data found."}</p> }
+            Err(_) => html! { <p>{"Invalid JSON format."}</p> },
         }
-    };
+    }
 
     let content = match get_content_type(&props.bytes) {
         (ContentType::Html, content_html) => html! {
@@ -88,25 +96,18 @@ pub fn ContentIFrame2(props: &Props) -> Html {
                 </iframe>
             </details>
         },
-        (ContentType::Json, content_json) => {
-            let json = serde_json::from_str::<serde_json::Value>(&content_json);
-            html! {
-                <details class="p-4 w-5/6" open={true}>
-                    <summary><b>{"Received JSON content :"}</b></summary>
-                    <div class="bg-black text-white p-4 rounded-md overflow-x-auto">
-                        <pre>
-                            <code class="lang-json">
-                                {render_json(content_json)}
-                            </code>
-                        </pre>
-                        { if let Ok(json) = json {
-                            render_twitter_data(&json)
-                        } else {
-                            html! { <p>{"Invalid JSON format."}</p> }
-                        } }
-                    </div>
-                </details>
-            }
+        (ContentType::Json, content_json) => html! {
+            <details class="p-4 w-5/6" open={true}>
+                <summary><b>{"Received JSON content :"}</b></summary>
+                <div class="bg-black text-white p-4 rounded-md overflow-x-auto">
+                    <pre>
+                        <code class="lang-json">
+                            {render_json(&content_json)}
+                        </code>
+                    </pre>
+                    {render_twitter_data(&content_json)}
+                </div>
+            </details>
         },
         _ => html! {},
     };
