@@ -167,7 +167,7 @@ impl Component for App {
                 // <p class="text-2xl text-center">{ "Upload Your TLSNotary Proof" }</p>
 
                 <label for="file-upload">
-                    <div class="p-16 flex flex-col justify-center items-center bg-zinc-700 border border-white border-dashed rounded-2xl"
+                    <div class="p-10 flex flex-col justify-center items-center bg-zinc-700 border border-white border-dashed rounded-2xl"
                         id="drop-container"
                         ondrop={ctx.link().callback(|event: DragEvent| {
                             event.prevent_default();
@@ -196,7 +196,7 @@ impl Component for App {
                 />
 
                 if self.is_processing {
-                    <div role="status" class="p-16 flex flex-col justify-center items-center bg-zinc-700 border border-white border-dashed rounded-2xl">
+                    <div role="status" class="p-10 flex flex-col justify-center items-center bg-zinc-700 border border-white border-dashed rounded-2xl">
                         {progress_icon}
                         <span>{"Processing..."}</span>
                     </div>

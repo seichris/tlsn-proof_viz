@@ -115,7 +115,9 @@ pub fn ContentIFrame2(props: &Props) -> Html {
         },
         (ContentType::Json, content_json) => html! {
             <div class="p-4 w-5/6">
-                {render_twitter_data(&content_json)}
+                <div class="bg-black text-white p-4 rounded-md overflow-x-auto">
+                    {render_twitter_data(&content_json)}
+                </div>
                 <details class="p-4 w-5/6" open={true}>
                     <summary><b>{"Received JSON content :"}</b></summary>
                     <div class="bg-black text-white p-4 rounded-md overflow-x-auto">

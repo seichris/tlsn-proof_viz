@@ -16,11 +16,13 @@ chrono = "0.4.31"
 p256 = { version = "0.13", features = ["ecdsa"] }
 elliptic-curve = { version = "0.13.5", features = ["pkcs8"] }
 webpki-roots = "0.25.2"
+log = "0.4"
 wasm-logger = "0.2.0"
 web-time = "0.2"
 spansy = { git = "https://github.com/sinui0/spansy", rev = "becb33d" }
 tlsn-core = { git = "https://github.com/tlsnotary/tlsn", branch = "dev" }
 wasm-bindgen = "0.2.89"
+gloo-storage = "0.3.0"
 
 [patch.crates-io.ring]
 git = "https://github.com/betrusted-io/ring-xous"

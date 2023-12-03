@@ -8,11 +8,12 @@ use yew::{function_component, html, Html, Properties};
 
 use tlsn_core::proof::{SessionProof, TlsProof};
 
-use crate::components::content_iframe::ContentIFrame;
+// use crate::components::content_iframe::ContentIFrame;
 use crate::components::content_iframe_2::ContentIFrame2;
+use crate::components::content_iframe_3::ContentIFrame3;
 use crate::components::redacted_bytes_component::Direction;
 use crate::components::redacted_bytes_component::RedactedBytesComponent;
-use crate::components::passport_stamps::PassportStamps;
+// use crate::components::passport_stamps::PassportStamps;
 
 const REDACTED_CHAR: char = 'X'; // '█' '🙈' 'X'
 
@@ -100,7 +101,7 @@ pub fn ViewFile(props: &Props) -> Html {
                 html! {
                     <div class="p-4 flex flex-col justify-center items-center w-full">
 
-                        
+                        <ContentIFrame3 bytes={recv.data().to_vec()} />
                         <ContentIFrame2 bytes={recv.data().to_vec()} />
                         // <ContentIFrame bytes={recv.data().to_vec()} />
                         // <ContentIFrame bytes={recv.data().to_vec()} on_json_received={ctx.link().callback(Msg::JsonDataReceived)} />
